@@ -1,0 +1,53 @@
+---
+- hosts: all
+  user: root
+  become: yes
+  tasks:
+    - name: git installation
+      yum:
+        name: git
+        state: present
+    - name: maven installation
+      yum:
+        name: maven
+        state: present
+          
+    - name: Download and extract Apache Tomcat
+      get_url:
+        url: "https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.59/bin/apache-tomcat-9.0.59.tar.gz"  # Replace with the link to the desired Tomcat version
+        dest: "/opt/"
+
+    - name: Extract Tomcat archive
+      ansible.builtin.unarchive:
+        src: "/opt/apache-tomcat-9.0.59.tar.gz"
+        dest: "/opt/"
+        remote_src: yes
+
+    - name: Create a symbolic link to Tomcat installation directory
+      file:
+        src: "/opt/apache-tomcat-9.0.59"
+        dest: "/opt/tomcat"
+        state: link      
+
+    - name: Start Tomcat service
+      command: "/opt/tomcat/bin/startup.sh"
+        
+    - name: Clone a github repository
+      git:
+        repo: https://github.com/Shiva-gopi/live01.git
+        dest: /root/live01
+        clone: yes
+        update: yes
+          
+    - name: Run Maven build
+      command:
+        cmd: mvn clean install
+        chdir: /root/live01
+
+    - name: Copy WAR file to Tomcat webapps directory
+      copy:
+        src: /root/live01/target/live.war
+        dest: /opt/tomcat/webapps/
+        remote_src: yes      
+
+     
